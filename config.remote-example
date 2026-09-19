@@ -1,0 +1,42 @@
+# search-router config for MAINLAND-CHINA / NO-VPN servers
+# (e.g. the Qiniu Cloud host). Copy to the path printed by `s --config`.
+#
+# Every backend below is reachable WITHOUT a proxy or VPN from inside China:
+#   bing        — cn.bing.com SERP scrape (zero-key, region-locked, Chinese-friendly)
+#   hackernews  — Algolia HN API (zero-key, English/tech only)
+#   github-repos— GitHub search API (zero-key)
+#   crossref    — DOI / paper metadata (zero-key)
+#   tavily      — needs TAVILY_API_KEY (optional)
+#
+# Deliberately EXCLUDED (blocked / not installed on the remote host):
+#   wikipedia   — fully blocked in China
+#   anysearch   — not deployed on the remote
+#   searxng     — no instance configured
+#   wigolo      — Docker not available on the remote
+#   crawl4ai    — heavy deps (Playwright/Chromium); skipped for disk space
+#
+# NOTE: Bing occasionally serves a CAPTCHA to a fresh session's first request.
+# The bing adapter retries once; if it still fails, the chain moves on.
+
+# ── URLs: fetch, don't search ─────────────────────────────────────────
+^https?://.*                     => http
+
+# ── Bare stock codes (Chinese A-share style) ─────────────────────────
+^[0-9]{6}$                       => bing
+
+# ── Chinese-language intent routing ───────────────────────────────────
+# Bing is the only Chinese-capable zero-key backend here; don't fall back to
+# HN (English-only, returns nothing for Chinese → wastes a round-trip).
+股价|行情|市值|财报|市盈|开盘         => bing
+论文|文献|期刊|DOI|arXiv|PMID       => crossref | bing
+法条|判例|司法解释|法规|条例           => bing
+汇率|外汇|货币                     => bing
+加密货币|比特币|以太坊|BTC|ETH        => bing
+
+# ── English-language / tech intent routing ───────────────────────────
+[Dd][Oo][Cc][Kk][Ee][Rr]|[Kk][Uu][Bb][Ee][Rr][Nn][Ee][Tt][Ee][Ss]|[Rr][Uu][Ss][Tt]|[Pp][Yy][Tt][Hh][Oo][Nn]  => hackernews | bing
+[Ll][Ii][Bb][Rr][Aa][Rr][Yy]|[Pp][Aa][Cc][Kk][Aa][Gg][Ee]|[Ff][Rr][Aa][Mm][Ee][Ww][Oo][Rr][Kk]  => github-repos | hackernews | bing
+[Aa][Rr][Xx][Ii][Vv]|[Dd][Oo][Ii]|[Pp][Aa][Pp][Ee][Rr]|[Jj][Oo][Uu][Rr][Nn][Aa][Ll]  => crossref | bing | hackernews
+
+# ── Default: Bing first (Chinese-capable), then English/tech backends ──
+*                                => bing | hackernews | github-repos | tavily

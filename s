@@ -17,8 +17,11 @@ set -uo pipefail
 SR_VERSION="0.1.0"
 
 # Resolve our own directory so adapters are found from any cwd.
-SR_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# Use readlink -f so a symlink in PATH still resolves to the real script dir.
+_SR_SELF="${BASH_SOURCE[0]:-$0}"
+SR_ROOT="$(cd "$(dirname "$(readlink -f "$_SR_SELF" 2>/dev/null || printf '%s' "$_SR_SELF")")" && pwd)"
 export SR_ROOT
+unset _SR_SELF
 SR_ADAPTERS="$SR_ROOT/adapters"
 SR_CONFIG="${SR_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/search-router/config}"
 
@@ -57,13 +60,13 @@ export SR_PY
 # `name:mode` passes a mode to the adapter (see adapters/*.sh).
 SR_DEFAULT_ROUTES='
 ^https?://.*                     => http | wigolo:fetch | crawl4ai:fetch
-^[0-9]{6}$                       => anysearch:stock | wikipedia | hackernews
-股价|行情|市值|财报|市盈|开盘        => anysearch:quote | wikipedia | hackernews
-论文|文献|期刊|DOI|arXiv|PMID      => anysearch:academic | wikipedia | hackernews
-法条|判例|司法解释|法规|条例          => anysearch:legal | wikipedia | hackernews
+^[0-9]{6}$                       => anysearch:stock | bing | hackernews
+股价|行情|市值|财报|市盈|开盘        => anysearch:quote | bing | hackernews
+论文|文献|期刊|DOI|arXiv|PMID      => anysearch:academic | bing | hackernews
+法条|判例|司法解释|法规|条例          => anysearch:legal | bing | hackernews
 汇率|外汇|货币                     => anysearch:forex | hackernews
 加密货币|比特币|以太坊|BTC|ETH       => anysearch:crypto | hackernews
-*                                => anysearch | searxng | tavily | wikipedia | hackernews
+*                                => anysearch | bing | searxng | tavily | hackernews | wikipedia
 '
 
 # Split one route line into SR_RL_MATCH / SR_RL_CHAIN.

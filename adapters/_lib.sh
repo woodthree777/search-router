@@ -8,6 +8,17 @@ set -uo pipefail
 : "${SR_UA:=search-router/$SR_VERSION (+https://github.com/woodthree777/search-router)}"
 : "${SR_ROOT:=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
+# Detect a python interpreter for adapters that parse JSON. Default to
+# python3 (absent on some minimal hosts); callers (e.g. `s`) may override.
+if [ -z "${SR_PY:-}" ]; then
+  for _c in python3 python py; do
+    if command -v "$_c" >/dev/null 2>&1; then
+      SR_PY="$_c"; break
+    fi
+  done
+fi
+export SR_PY
+
 # json_get <key-path>   — read stdin JSON, print a dotted path.
 # Uses python when present, else a crude grep fallback.
 json_get() {
