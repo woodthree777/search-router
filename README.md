@@ -73,6 +73,38 @@ adapters
 **Anything marked ✗ is simply skipped** — the router falls through to the next
 adapter in the chain. Nothing breaks.
 
+## Deploy on a China / no-VPN host
+
+On servers inside mainland China without a proxy/VPN, `wikipedia` is **blocked**
+and heavy tools (crawl4ai/Playwright/Chromium, Docker) are best avoided on
+tight disks. This repo ships a zero-key profile that uses only what is directly
+reachable from China:
+
+| Backend | Reachable from CN? | Notes |
+|---|---|---|
+| `bing` (cn.bing.com SERP scrape) | ✅ | Chinese-capable; zero-key; occasional CAPTCHA (auto-retried) |
+| `hackernews` (Algolia API) | ✅ | English/tech only |
+| `github-repos` | ✅ | anonymous 10/min |
+| `crossref` | ✅ | DOI / paper metadata |
+| `tavily` | ✅ (needs key) | optional |
+| `wikipedia` | ❌ blocked | excluded |
+| `anysearch` / `searxng` / `wigolo` | ❌ not deployed | excluded |
+| `crawl4ai` | ⚠️ optional | skipped by default for disk space |
+
+```bash
+git clone https://github.com/woodthree777/search-router.git
+cd search-router
+./install.sh
+# use the China/no-VPN config (no wikipedia, bing-first)
+cp config.remote-example ~/.config/search-router/config
+s --check          # bing / hackernews / github-repos / crossref should be ✓
+```
+
+Bing sometimes serves a CAPTCHA to a fresh session's first request; the adapter
+retries automatically (up to 3× with warm-up queries). If a search still fails,
+just re-run it.
+
+
 ## Adapters
 
 Each adapter is a small standalone shell script in `adapters/`. That's the
