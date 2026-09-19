@@ -1,0 +1,6 @@
+# Shell scripts must keep LF endings — CRLF breaks the shebang on
+# Linux/macOS ("bad interpreter: /usr/bin/env bash^M").
+*.sh   text eol=lf
+s      text eol=lf
+*.md   text eol=lf
+*.example text eol=lf
