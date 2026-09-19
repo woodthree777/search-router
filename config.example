@@ -1,0 +1,42 @@
+# search-router config — copy to the path printed by `s --config`
+#
+# Each line:   <extended-regex>  =>  <adapter-chain>
+#
+#   * First matching rule wins.
+#   * `|` separates fallbacks — the first adapter that returns output wins.
+#   * `name:mode` passes a mode to that adapter.
+#   * `*` matches everything; put it last.
+#   * The separator may be `=>`, `>`, a tab, or 2+ spaces. Because `=>`
+#     is explicit, your regex may contain single spaces.
+#
+# Adapter modes:
+#   anysearch : stock | quote | forex | crypto | academic | legal
+#   wigolo    : search (default) | fetch | cache
+#   crawl4ai  : fetch (default) | shot | crawl
+#
+# Comment out a line with '#' to disable it. Delete this file to fall back
+# to the built-in defaults.
+
+# ── URLs: fetch, don't search ─────────────────────────────────────────
+^https?://.*                     => http | wigolo:fetch | crawl4ai:fetch
+
+# ── Bare stock codes ──────────────────────────────────────────────────
+^[0-9]{6}$                       => anysearch:stock | wikipedia | hackernews
+
+# ── Chinese-language intent routing ───────────────────────────────────
+股价|行情|市值|财报|市盈|开盘         => anysearch:quote | wikipedia | hackernews
+论文|文献|期刊|DOI|arXiv|PMID       => anysearch:academic | wikipedia | hackernews
+法条|判例|司法解释|法规|条例           => anysearch:legal | wikipedia | hackernews
+汇率|外汇|货币                      => anysearch:forex | hackernews
+加密货币|比特币|以太坊|BTC|ETH        => anysearch:crypto | hackernews
+
+# ── English-language intent routing ───────────────────────────────────
+# bash uses POSIX ERE: there is no (?i) inline flag. Use [Ss]tyle
+# character classes for case-insensitive matching.
+[Ss][Tt][Oo][Cc][Kk]|[Tt][Ii][Cc][Kk][Ee][Rr]|[Mm][Aa][Rr][Kk][Ee][Tt] [Cc][Aa][Pp]   => anysearch:quote | hackernews
+[Aa][Rr][Xx][Ii][Vv]|[Dd][Oo][Ii]|[Jj][Oo][Uu][Rr][Nn][Aa][Ll]|[Pp][Aa][Pp][Ee][Rr]    => anysearch:academic | wikipedia
+[Dd][Oo][Cc][Kk][Ee][Rr]|[Kk][Uu][Bb][Ee][Rr][Nn][Ee][Tt][Ee][Ss]|[Rr][Uu][Ss][Tt]|[Pp][Yy][Tt][Hh][Oo][Nn]  => hackernews | wikipedia | anysearch
+[Ll][Ii][Bb][Rr][Aa][Rr][Yy]|[Pp][Aa][Cc][Kk][Aa][Gg][Ee]|[Ff][Rr][Aa][Mm][Ee][Ww][Oo][Rr][Kk]  => github-repos | hackernews | anysearch
+
+# ── Default: fastest available general search ─────────────────────────
+*                                => anysearch | searxng | tavily | wikipedia | hackernews
